@@ -9,7 +9,7 @@
 > Hint: The app keeps giving us these pesky alerts when we start the app. We should investigate.
 * We started by setting up an emulated device, using Android Studio. The emulated device was based on Pixel XL, running Android 8.1 (APK 27).
 * After boot, we installed the apk without any notable events :
-![[Pasted image 20211203132930.png]]
+[icon](Pasted image 20211203132930.png)
 * After installation, we launched the application by clicking the app icon. We were greeted with this error, followed by the application quitting:
 ![[Pasted image 20211203133049.png]]
 * Suspecting the application runs some sort of checks at start up, we disassembled the apk using dex2jar, oponed the jar file using jd-gui and looked for relevant code at MainActivity.
