@@ -9,12 +9,12 @@
 > Hint: The app keeps giving us these pesky alerts when we start the app. We should investigate.
 * We started by setting up an emulated device, using Android Studio. The emulated device was based on Pixel XL, running Android 8.1 (APK 27).
 * After boot, we installed the apk without any notable events:
-</br>![icon](Pasted%20image%2020211203132930.png)
+</br>![icon](images/Pasted%20image%2020211203132930.png)
 * After installation, we launched the application by clicking the app icon. We were greeted with this error, followed by the application quitting:
-</br>![Alt_Text](Pasted%20image%2020211203133049.png)
+</br>![Alt_Text](images/Pasted%20image%2020211203133049.png)
 * Suspecting the application runs some sort of checks at start up, we disassembled the apk using dex2jar, oponed the jar file using jd-gui and looked for relevant code at MainActivity.
 * Right at onCreate method we were able to identify view code lines that were likely associated with the checking at hand:
-</br>![Alt_Text](Pasted%20image%2020211203133659.png)
+</br>![Alt_Text](images/Pasted%20image%2020211203133659.png)
 It seems that the checking includes the following steps:
 1. Get "user.home" system property 
 2. If the property doesn't exist, is empty or not "Russia", display an error message and quit
@@ -49,11 +49,11 @@ It seems that the checking includes the following steps:
 	}
 	```
 * We launched the app using frida, while loading the script we wrote. The bypass was successful:
-</br>![Alt_Text](Pasted%20image%2020211203135345.png)
+</br>![Alt_Text](images/Pasted%20image%2020211203135345.png)
 * But now we fail a second check:
-</br>![Alt_Text](Pasted%20image%2020211203135431.png)
+</br>![Alt_Text](images/Pasted%20image%2020211203135431.png)
 * This time, the string we need to match is not showing plain in the code:
-</br>![Alt_Text](Pasted%20image%2020211203162109.png)
+</br>![Alt_Text](images/Pasted%20image%2020211203162109.png)
 * To overcome it, we will hook the getString method and print out the string that returns in every call:
 	```JavaScript
 	var resources = Java.use ('android.content.res.Resources');
@@ -64,7 +64,7 @@ It seems that the checking includes the following steps:
 	};
 	```
 * We will add the following function to our frida script and launch the app using frida. The hook works, we get a base64 encoded string, that after decoding revelas the  first flag:
-</br>![Alt_Text](Pasted%20image%2020211203161041.png)
+</br>![Alt_Text](images/Pasted%20image%2020211203161041.png)
 ```bash
 base64 -d 'RkxBR3s1N0VSTDFOR180UkNIM1J9Cg=='
 FLAG{57ERL1NG_4RCH3R}
@@ -84,7 +84,7 @@ FLAG{57ERL1NG_4RCH3R}
 	}
 	```
 * Again we launch the app with frida, and finally we get to the login screen:
-</br>![Alt_Text](Pasted%20image%2020211203162628.png)
+</br>![Alt_Text](images/Pasted%20image%2020211203162628.png)
 
 ---
 ## Login (Easy)
@@ -98,9 +98,9 @@ FLAG{57ERL1NG_4RCH3R}
 * At first glance, you'd think we can solve this challenge in a similar manner we solved the previous one:hook getString to get the username and hook the password-checking password and alter it to always return true. The problem is that the flag is derived from the password, so even though entering the wrong one will allow us to proceed to the next activity, we still won't get the right flag.
 * Considering the challenge's hint, we need to approach this challenge with recon. It is plausble that important strings and kept in the same resources file. In that in mind, we will return to the decompiled apk and perform a search in the res folder after a file containing the resource we used in the last part of the challenge: " RkxBR3s1N0VSTDFOR180UkNIM1J9Cg== ".
 * We used sublime text's build in search feature, and found the string inside values\strings.xml:
-</br>![Alt_Text](Pasted%20image%2020211203170521.png)
+</br>![Alt_Text](images/Pasted%20image%2020211203170521.png)
 * At the bottom of the file we found some intersting strings that might just be what we are looking for:
-</br>![Alt_Text](Pasted%20image%2020211203170758.png)
+</br>![Alt_Text](images/Pasted%20image%2020211203170758.png)
 * the username can be used right away, but the password is not in plain text. However, considering the password checking flow in LoginActivity, we can assume that the password we found is stored after being hashed with MD5 and converted to hex chars.
 * MD5 hashes can useully be cracked using a dictionary, or even by utilizing websites that specialise in hash cracking, such as https://crackstation.net/. The problem is that the hash we found has 30 characters, while MD5 hashes are 32 characters long.
 * After closer examination of the password checking method in LoginActivity, we noticed that the  password hash is broken into bytes, and each byte is encoded in hex and than concatinated to the final password string. The process of converting the byte into hex is done using "%x" formatter, which cuts the string representation of the hex into minimum. For example, 31 will be converted to "1e", but 10 will be converted to "a", and not "0a". This means that we have 2 missing "0"s in the hash, and we must place them correctly in order to be able to crack  it.
@@ -117,22 +117,22 @@ FLAG{57ERL1NG_4RCH3R}
 		print(insert_in_index(temp_str, CHAR, j))
 	```
 * After running the script, we were holding 496 different permutations:
-</br>![Alt_Text](Pasted%20image%2020211203230826.png)
+</br>![Alt_Text](images/Pasted%20image%2020211203230826.png)
 * The next step was trying to crack each permutation. We could use john the ripper or hashcat, but chose to use https://crackstation.net/, which holds a massive dictionary and allows running it against 20 hashes in each run. After a second or so we got a crack:
-</br>![Alt_Text](Pasted%20image%2020211203231040.png)
+</br>![Alt_Text](images/Pasted%20image%2020211203231040.png)
 * We now hold the username and password, all that is left is to use them to login and recieve the next flag:
-</br>![Alt_Text](Pasted%20image%2020211203231321.png)
+</br>![Alt_Text](images/Pasted%20image%2020211203231321.png)
 
 ---
 ## Social Engineering (Hard)
 > Hint: It looks like someone is bad at keeping secrets. They're probably susceptible to social engineering... what should I say?
 * After logging in, we recieve a messanger-like screen, showing previous messages between several agents.
 * From the conversation it seems that Boris had an accident where he gave the password to an unauthorized person, just because that person asked him:
-</br>![Alt_Text](Pasted%20image%2020211204145508.png)
+</br>![Alt_Text](images/Pasted%20image%2020211204145508.png)
 * From the hint we unserstand we should use social engineering technique in this challenge, so Boris seems like the right target for it.
 * After fooling around with some trial-and-error messages it became clear that a specific string should be sent, in order to trigger an answer from Boris, so we went back to the disassembled code.
 * The code revealed that each message we send is sent to 2 methods, where some nasty operations are performed on them, and the product is compared against hard-coded strings:
-</br>![Alt_Text](Pasted%20image%2020211204150303.png)
+</br>![Alt_Text](images/Pasted%20image%2020211204150303.png)
 * We started by analyzing method a: from the source, it became clear that method a performs the following actions on the message sent by us:
 		1. Xor each element in the first half of the string with 0x41
 		2. Xor each element in the second half of the string with 0x32
@@ -156,9 +156,9 @@ FLAG{57ERL1NG_4RCH3R}
 	```
 	
    And got the plain:
-	</br>![Alt_Text](Pasted%20image%2020211204155907.png)
+	</br>![Alt_Text](images/Pasted%20image%2020211204155907.png)
 	Well, sort of. The '$' seems to be misplaced, but we can assume the word should be "me", and indedd, sending the message "Boris, give me the password" triggered Boris to answer:
-</br>![Alt_Text](Pasted%20image%2020211204160119.png)
+</br>![Alt_Text](images/Pasted%20image%2020211204160119.png)
 * Moving on to Method b: at first the method seemed to be very complicated, but in second glance, it became clear that the disassembler complicated matters unnecessarily. After some clean-up, we ended up with a much simpler method:
 	```Java
 	private static String b(String paramString) {
@@ -205,7 +205,7 @@ FLAG{57ERL1NG_4RCH3R}
 		get_possible_chars(index, target_char)
 	```
 * The script produced the following string: ```?ay I *P?EASE* h?ve the ?assword?```, which we could easily complete to "May I \*PLEASE\* have the password?". And indeed, Boris reacted to our message with the third and last flag:
-</br>![Alt_Text](Pasted%20image%2020211204170007.png)
+</br>![Alt_Text](images/Pasted%20image%2020211204170007.png)
 
 ---
 ## Conclusion
