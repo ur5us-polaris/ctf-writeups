@@ -186,7 +186,7 @@ FLAG{57ERL1NG_4RCH3R}
 * Bitshifting is not a loseless operation, so just reversing the process will not necessarily repreduce the plain text. Instead, we decided to enumerate possible characters that after going through the above process, may produce a coherent sentence. We operated under the following assumptiona:
 	1. The expected message will be a string containing common characters: A-Z, a-z, 0-9, and some special characters: !, * , ?, comma and period.
 	2. As a follow up to Boris' response, the expected message should be "polite". i.e, it will contain "please" and more polite ways of asking a password, rather than saying "give me".
-	3. Every can preduce \000, so we will skip the enumration for \000 and hope we get a coherente enough sentance to gap the holes.
+	3. Every character can preduce \000, so we will skip the enumration for \000 and hope we get a coherente enough sentance to gap the holes.
 * The following script reversed the encoded string and displayed possible charcter for each element in the string:
 	```python
 	def get_possible_chars(index, target_char):  
